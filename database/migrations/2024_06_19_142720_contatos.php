@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('complemento');
             $table->string('cep');
             $table->bigInteger('id_bairro')->unsigned()->index()->nullable();
-            $table->string('latlong');
+            $table->string('lat_long');
             $table->timestamps();
             $table->foreign('id_usuario')->references('id')->on('users');
             $table->foreign('id_bairro')->references('id')->on('bairros');

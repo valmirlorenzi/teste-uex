@@ -4,6 +4,7 @@
         width:100%;
         margin-bottom: 15px;
     }
+    .erro { border-color: red; }
 </style>
 <x-app-layout>
     <x-slot name="header">
@@ -47,44 +48,45 @@
             <h1 style="font-size:1.3em;font-weight: bold;">Edite o contato aqui. Para incluir um novo, clique em 'limpar' e informe os dados.</h1>
             <form id="form-contato" onsubmit="return validarESalvarDadosContato();">
                 <input type='hidden' id="id_contato" value=''/>
+                <input type='hidden' id="id_usuario" name="id_usuario" value='{{Auth::User()->id}}'/>
 
                 <label for="nome">Nome</label>
                 <input type="text" id="nome_contato" required="required" name="nome_contato" />
 
                 <label for="fone">CPF</label>
-                <input type="text" id="cpf_contato" name="cpf_contato" />
+                <input type="text" id="cpf_contato" name="cpf_contato" required="required" />
 
                 <label for="fone">Telefone</label>
-                <input type="text" id="telefone_contato" name="telefone_contato" />
+                <input type="text" id="telefone_contato" name="telefone_contato" required="required" />
 
                 <label for="cep">CEP</label>
-                <input style="width:90%;" type="text" id="cep_contato" name="cep_contato" />
+                <input style="width:90%;" type="text" id="cep_contato" name="cep_contato" required="required" />
                 <a href="javascript:void(null)" style="width:10%;" onclick="buscarCep()">Buscar</a>
 
                 <label for="endereco">Endereço</label>
-                <input type="text" id="endereco_contato" name="endereco_contato" />
+                <input type="text" id="endereco_contato" name="endereco_contato" required="required" />
 
                 <label for="numero">Número</label>
-                <input type="text" id="numero_contato" name="numero_contato" />
+                <input type="text" id="numero_contato" name="numero_contato" required="required" />
 
                 <label for="numero">Complemento</label>
-                <input type="text" id="complemento_contato" name="complemento_contato" />
+                <input type="text" id="complemento_contato" name="complemento_contato"  />
                 
                 <label for="uf">UF</label>
-                <select id="uf_contato" name="uf_contato"></select>
+                <select id="uf_contato" name="uf_contato" required="required" ></select>
 
                 <label for="cidade">Cidade</label>
-                <input type="text" id="cidade_contato" name="cidade_contato" onkeydown="sugerirCidades(this.value)"/>
+                <input type="text" id="cidade_contato" name="cidade_contato" required="required" onkeydown="sugerirCidades(event)"/>
                 <ul style="display:none;" id="lista-cidades-contato"></ul>
 
                 <label for="bairro">Bairro</label>
                 <input type="text" id="bairro_contato" name="bairro_contato" />
                 
                 <label for="latlant">Coordenadas</label>
-                <input type="text" id="latlong_contato" name="latlong_contato" />
+                <input type="text" id="latlong_contato" name="latlong_contato" required="required" />
                 
                 <input type="submit" class="salvar" value="Salvar" />
-                <input type="submit" class="limpar" onclick="limparDados();" value="Limpar" />
+                <input type="submit" class="limpar" onclick="limparDadosForm();" value="Limpar" />
             </form>                        
                 
             <button onclick="posicionarMapa()">Marcar endereço no mapa</button>
@@ -179,7 +181,6 @@
             if(uf != null && uf != undefined && uf != '' && texto.lengh > 2) {
                 buscarCidades(uf, texto + (evt.keyCode > 32 ? evt.key : ""));
             }
-
         }
         
         function buscarCidades(uf, texto) {
@@ -218,7 +219,8 @@
             }
         }
         
-        function limparDados() {
+        function limparDadosForm() {
+            document.getElementById("id_usuario").value = "";
             document.getElementById("id_contato").value = "";
             document.getElementById("nome_contato").value = "";
             document.getElementById("cpf_contato").value = "";
@@ -236,6 +238,7 @@
         
         function validarESalvarDadosContato() {
             var id = document.getElementById("id_contato").value;
+            var idUsuario = document.getElementById("id_usuario").value;
             var nome = document.getElementById("nome_contato").value;
             var cpf = document.getElementById("cpf_contato").value;
             var telefone = document.getElementById("telefone_contato").value;
@@ -273,21 +276,22 @@
                 return false;
             }
             else {
-                var params = { 'nome' : nome, 'cpf' : cpf, 'telefone' : telefone, 'cep' : cep, 'endereco' : endereco, 'numero' : numero, 'complemento' : complemento, 'bairro' : bairro, 'cidade' : cidade, 'uf' : uf, 'latlong' : latLong };
+                var params = {'id_usuario': idUsuario, 'nome' : nome, 'cpf' : cpf, 'telefone' : telefone, 'cep' : cep, 'endereco' : endereco, 'numero' : numero, 'complemento' : complemento, 'bairro' : bairro, 'cidade' : cidade, 'uf' : uf, 'latlong' : latLong };
                 if(id == null || id == undefined || id == "") { // trata-se de um novo contato
                     fetch("api/contato/", {method : "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
-                        .then(data => { return data.json(); })
+                        .then(data => { return data.text(); })
                         .then(ret => {
-                            alert("INSERT: " + ret);
+                            document.getElementById("lista-contatos").innerHTML = html;
                         });
                 }
                 else { // alteração de contato
                     fetch("api/contato/" + id, {method : "PUT", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
-                        .then(data => { return data.json(); })
+                        .then(data => { return data.text(); })
                         .then(ret => {
-                            alert("UPDATE: " + ret);
+                            document.getElementById("lista-contatos").innerHTML = html;
                         });
                 }
+                limparDadosForm();
                 return true;
             }
 

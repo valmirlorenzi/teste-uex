@@ -28,7 +28,6 @@ Route::get('/contatos', function () {
 })->middleware(['auth', 'verified'])->name('contatos');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/contatos', [ContatoController::class, 'lista'])->name('contatos.lista');
     Route::get('/lista-contatos', [ContatoController::class, 'lista'])->name('contatos.lista');
     Route::get('/visualizacao-contatos', [ContatoController::class, 'visualizacao'])->name('contatos.visualizacao');
     Route::get('/ler-contato', [ContatoController::class, 'show'])->name('contatos.show');

@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Resources\ContatoResource;
 use App\Models\Contato;
+use App\Models\Cidade;
+use App\Models\Bairro;
 
 class ContatoController extends Controller
 {
@@ -29,7 +31,14 @@ class ContatoController extends Controller
      */
     public function store(Request $request)
     {
+      // verificar se o cadastro de bairro e cidade existem 
+        $this->verificarCidade($request->cidade, $request->uf);
+        $cidade = Cidade::select('id', 'nome', 'uf')->where('nome', $request->cidade)->where('uf', $request->uf)->first(); // agora deve existir
+        $this->verificarBairro($request->bairro, $cidade->id);
+        $bairro = Bairro::select('id', 'nome', 'id_cidade')->where('id_cidade', $cidade->id)->where('nome', $request->bairro)->first(); // agora deve existir
+        
         $contato = new Contato;
+        $contato->id_usuario = $request->id_usuario;
         $contato->nome = $request->nome;
         $contato->cpf = $request->cpf;
         $contato->telefone = $request->telefone;
@@ -37,9 +46,10 @@ class ContatoController extends Controller
         $contato->endereco = $request->endereco;
         $contato->numero = $request->numero;
         $contato->complemento = $request->complemento;
+        $contato->id_bairro = $bairro->id;
         $contato->lat_long = $request->latlong;
         $contato->save();
-        return redirect("/contatos")->with('msg', 'Contato incluído com sucesso');
+        //redirect("/lista-contatos")->with('msg', 'Contato incluído com sucesso'); // todo ver - não funciona
     }
 
     /**
@@ -70,17 +80,48 @@ class ContatoController extends Controller
      */
     public function update($id, Request $request)
     {
+      // verificar se o cadastro de bairro e cidade existem 
+        $this->verificarCidade($request->cidade, $request->uf);
+        $cidade = Cidade::select('id', 'nome', 'uf')->where('nome', $request->cidade)->where('uf', $request->uf)->first(); // agora deve existir
+        $this->verificarBairro($request->bairro, $cidade->id);
+        $bairro = Bairro::select('id', 'nome', 'id_cidade')->where('id_cidade', $cidade->id)->where('nome', $request->bairro)->first(); // agora deve existir
         $contato = Contato::findOrFail($id);
         $contato->nome = $request->nome;
         $contato->cpf = $request->cpf;
         $contato->telefone = $request->telefone;
-        $contato->cep = $request->cep_;
+        $contato->cep = $request->cep;
         $contato->endereco = $request->endereco;
         $contato->numero = $request->numero;
         $contato->complemento = $request->complemento;
         $contato->lat_long = $request->latlong;
+        $contato->id_bairro = $bairro->id;
         $contato->update();
-        return redirect("/contatos")->with('msg', 'Contato editado com sucesso');
+        //redirect("/lista-contatos")->with('msg', 'Contato editado com sucesso'); // todo ver - não funciona
+    }
+    /**
+     * Verifia se a cidade está cadastrada, pelo nome e UF... se não estiver, inclui
+     */
+    private function verificarCidade($nome, $uf) {
+        $cidade = Cidade::select('id', 'nome', 'uf')->where('nome', $nome)->where('uf', $uf)->first();
+        if(!$cidade) { // cidade não existe, cadastrar
+            $cidade = new Cidade;
+            $cidade->nome = $nome;
+            $cidade->uf = $uf;
+            $cidade->save();
+        }
+    }
+        
+    /**
+     * Verifia se o bairro está cadastrado, pelo nome e cidade... se não estiver, inclui
+     */
+    private function verificarBairro($nome, $idCidade) {
+        $bairro = Bairro::select('id', 'nome', 'id_cidade')->where('id_cidade', $idCidade)->where('nome', $nome)->first();
+        if(!$bairro) { // bairro não existe, cadastrar
+            $bairro = new Bairro;
+            $bairro->nome = $nome;
+            $bairro->id_cidade = $idCidade;
+            $bairro->save();
+        }
     }
 
     /**
@@ -92,20 +133,32 @@ class ContatoController extends Controller
         return $contato;
     }
     
-    
+    /**
+     * Lê os contatos cadastrados do usuário logado que corresponda ao filtro e os retorna em uma lista para a opção VISUALIZAÇÃO DE CONTATOS
+     */
+    public function filtra($tipoContato = "", $texto = "") {
+        $contatos = $this->lerContatos($tipoContato, $texto);
+        include('../resources/views/lista-contatos.php');
+    }
+        
     /**
      * Lê os contatos cadastrados do usuário logado e os retorna em uma lista para a opção CONTATOS
      */
     public function lista() {
+        $contatos = $this->lerContatos();
+        return view('lista-contatos', ['contatos' => $contatos]);
+    }
+    
+    private function lerContatos($tipoContato = "", $texto = "") {
 //        $contatos = ContatoResource::collection(Contato::all()->sortBy('nome'));
         $contatos = Contato::select('contatos.*', 'bairros.nome AS nome_bairro', 'cidades.nome AS nome_cidade', 'cidades.uf', 'users.name AS nome_usuario')
                         ->leftJoin('bairros', 'bairros.id', '=', 'contatos.id_bairro')
                         ->leftJoin('cidades', 'cidades.id', '=', 'bairros.id_cidade')
                         ->leftJoin('users', 'users.id', '=', 'contatos.id_usuario')
                         ->orderBy('contatos.nome')
+                        ->orWhereRaw("CONCAT(ifnull(contatos.nome,''),' ',ifnull(contatos.cpf,''),' ',ifnull(contatos.telefone,''),' ',ifnull(contatos.endereco,''),' ',ifnull(bairros.nome,''),' ',ifnull(cidades.nome,''),' ',ifnull(contatos.cep,'')) LIKE '%{$texto}%' ")
                         ->get();
-        
-        return view('lista-contatos', ['contatos' => $contatos]);
+        return $contatos;
     }
     
     /**
