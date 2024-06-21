@@ -39,7 +39,7 @@ class ContatoController extends Controller
         $contato->complemento = $request->complemento;
         $contato->lat_long = $request->latlong;
         $contato->save();
-        //return redirect("/contatos")->with('msg', 'Contato incluído com sucesso');
+        return redirect("/contatos")->with('msg', 'Contato incluído com sucesso');
     }
 
     /**
@@ -68,20 +68,19 @@ class ContatoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update($id, Request $request)
     {
         $contato = Contato::findOrFail($id);
-        $contato = new Contato;
         $contato->nome = $request->nome;
         $contato->cpf = $request->cpf;
         $contato->telefone = $request->telefone;
-        $contato->cep = $request->cep;
+        $contato->cep = $request->cep_;
         $contato->endereco = $request->endereco;
         $contato->numero = $request->numero;
         $contato->complemento = $request->complemento;
         $contato->lat_long = $request->latlong;
         $contato->update();
-//        return redirect("/contatos")->with('msg', 'Contato editado com sucesso');
+        return redirect("/contatos")->with('msg', 'Contato editado com sucesso');
     }
 
     /**

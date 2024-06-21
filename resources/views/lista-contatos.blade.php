@@ -33,7 +33,7 @@
                         <div style="font-size:0.8em;">{{$contato["endereco"] . ", " . $contato["numero"] . ($contato["complemento"] != "" ? " - " . $contato["complemento"] : "")}}</div>
                         <div style="font-size:0.8em;">{{$contato["cep"] . " - " . $contato["nome_bairro"] }}</div>
                         <div style="font-size:0.8em;">{{$contato["nome_cidade"] . " - " . $contato["uf"] }}</div>
-                        <div style="font-size:0.8em;">{{$contato["lat_long"]}</div>
+                        <div style="font-size:0.8em;">{{$contato["lat_long"]}}</div>
                     </div>
                     <div>
                         <div><a style="color:blue;font-size:1.1em" href="javascript:editarContato({{$contato["id"]}})">Editar</a></div>
@@ -247,24 +247,50 @@
             var cidade = document.getElementById("cidade_contato").value;
             var uf = document.getElementById("uf_contato").value;
             var latLong = document.getElementById("latlong_contato").value;
-            // TODO validar campos
             
-            var params = { 'nome' : nome, 'cpf' : cpf, 'telefone' : telefone, 'cep' : cep, 'endereco' : endereco, 'numero' : numero, 'complemento' : complemento, 'bairro' : bairro, 'cidade' : cidade, 'uf' : uf, 'latlong' : latLong };
-            if(id == null || id == undefined || id == "") { // trata-se de um novo contato
-                fetch("api/contato/", {method : "POST", body: JSON.stringify(params)})
-                    .then(data => { return data.json(); })
-                    .then(ret => {
-                    });
+            var msg = "";
+            if(nome == "") {
+                msg += "\nNome não pode ser vazio"; 
+                document.getElementById("nome_contato").classList.add("erro");
             }
-            else { // alteração de contato
-                fetch("api/contato/" + id, {method : "PUT", body: JSON.stringify(params)})
-                    .then(data => { return data.json(); })
-                    .then(ret => {
-                        alert(ret);
-                    });
+            else if(nome.length < 5) {
+                msg += "\nNome inválido - menos de 5 caracteres"; 
+                document.getElementById("nome_contato").classList.add("erro");
+            }
+            else {
+                document.getElementById("nome_contato").classList.remove("erro");
+            }
+            if(!validaCPF(cpf)) {
+                msg += "\nCPF inválido"; 
+                document.getElementById("cpf_contato").classList.add("erro");
+            }
+            else {
+                document.getElementById("cpf_contato").classList.remove("erro");
             }
             
-            return true;
+            if(msg != "") {
+                alert("Há erros que impedem a gravação - por favor verifique\n\n" + msg);
+                return false;
+            }
+            else {
+                var params = { 'nome' : nome, 'cpf' : cpf, 'telefone' : telefone, 'cep' : cep, 'endereco' : endereco, 'numero' : numero, 'complemento' : complemento, 'bairro' : bairro, 'cidade' : cidade, 'uf' : uf, 'latlong' : latLong };
+                if(id == null || id == undefined || id == "") { // trata-se de um novo contato
+                    fetch("api/contato/", {method : "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
+                        .then(data => { return data.json(); })
+                        .then(ret => {
+                            alert("INSERT: " + ret);
+                        });
+                }
+                else { // alteração de contato
+                    fetch("api/contato/" + id, {method : "PUT", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
+                        .then(data => { return data.json(); })
+                        .then(ret => {
+                            alert("UPDATE: " + ret);
+                        });
+                }
+                return true;
+            }
+
         }
         
         function posicionarMapa() {
@@ -284,6 +310,28 @@
             
             initMap(enderecoCompleto);
         }
+        
+        function validaCPF(cpf) {
+            cpf = cpf.replace(/\D+/g, '');
+            if (cpf.length !== 11) return false;
+
+            let soma = 0;
+            let resto;
+            if (/^(\d)\1{10}$/.test(cpf)) return false; // Verifica sequências iguais
+
+            for (let i = 1; i <= 9; i++) soma += parseInt(cpf.substring(i-1, i)) * (11 - i);
+            resto = (soma * 10) % 11;
+            if ((resto === 10) || (resto === 11)) resto = 0;
+            if (resto !== parseInt(cpf.substring(9, 10))) return false;
+
+            soma = 0;
+            for (let i = 1; i <= 10; i++) soma += parseInt(cpf.substring(i-1, i)) * (12 - i);
+            resto = (soma * 10) % 11;
+            if ((resto === 10) || (resto === 11)) resto = 0;
+            if (resto !== parseInt(cpf.substring(10, 11))) return false;
+
+            return true;
+        }        
     </script>        
         
 </x-app-layout>

@@ -5,10 +5,7 @@
         <group>
             <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/routes/api.php</file>
             <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/app/Http/Controllers/ContatoController.php</file>
-            <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/app/Http/Controllers/ViaCepController.php</file>
             <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/resources/views/lista-contatos.blade.php</file>
-            <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/app/Http/Controllers/CidadeController.php</file>
-            <file>file:/media/valmir/mercurio/home/valmir/www/laravel/teste-uex/resources/views/contatos.blade.php</file>
         </group>
     </open-files>
 </project-private>

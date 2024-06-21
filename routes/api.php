@@ -28,5 +28,5 @@ Route::get("/ufs", [CidadeController::class, 'pegarUFs']);
 Route::get("/cidades/{uf}/{texto}", [CidadeController::class, 'pegarCidades']);
 
 Route::post("/contato", [ContatoController::class, 'store']);
-Route::put("/contato/{request}/{id}", [ContatoController::class, 'update']);
+Route::put("/contato/{id}", [ContatoController::class, 'update']);
 Route::delete("/contato/{id}", [ContatoController::class, 'destroy']);
