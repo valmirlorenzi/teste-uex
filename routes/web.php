@@ -30,7 +30,7 @@ Route::get('/contatos', function () {
 Route::middleware('auth')->group(function () {
     Route::get('/lista-contatos', [ContatoController::class, 'lista'])->name('contatos.lista');
     Route::get('/visualizacao-contatos', [ContatoController::class, 'visualizacao'])->name('contatos.visualizacao');
-    Route::get('/ler-contato', [ContatoController::class, 'show'])->name('contatos.show');
+    //Route::get('/ler-contato', [ContatoController::class, 'show'])->name('contatos.show');
 });
 
 Route::middleware('auth')->group(function () {

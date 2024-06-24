@@ -2,7 +2,6 @@
     <script>
         var marcas = []; // para armazenas as coordenadas dos contatos cadastrados
     </script>
-
    
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
@@ -19,25 +18,28 @@
             </div>
         </div>
     </div>
-    <div style="margin-top:30px; margin-bottom: 30px; background-color: #cacaca;width:40%;">
-        <div style="width:100%">
-            <label for="filtro-tipo-contato">Tipo de contato:</label>
-            <select id="filtro-tipo-contato">
-                <option>Todos</option>
-            </select>
+    <div style="display:flex;">
+        <div style="width: 40%;  background-color: #ffffdd;">
+            <div style="margin-top:30px; margin-bottom: 30px;">
+                <div style="width:100%">
+                    <label for="filtro-tipo-contato">Tipo de contato:</label>
+                    <select id="filtro-tipo-contato">
+                        <option>Todos</option>
+                    </select>
+                </div>
+                <div style="width:100%">
+                    <label for="filtro">Pesquisa:</label>
+                    <input type="text" id="filtro" style="" onkeydown="pesquisarContatos(event);"/>
+                </div>
+            </div>
+            <div id="lista-contatos" class="bg-white">
+                @php
+                    $tipo = "visualizacao";
+                    require('../resources/views/lista-contato.php');
+                @endphp
+            </div>
         </div>
-        <div style="width:100%">
-            <label for="filtro">Pesquisa:</label>
-            <input type="text" id="filtro" style="width:100%;" onkeydown="pesquisarContatos(event);"/>
-        </div>
-    </div>
-    <div>
-        <div id="lista-contatos" class="bg-white" style="width:40%; float: left;">
-            @php
-                require('../resources/views/lista-contatos.php');
-            @endphp
-        </div>
-        <div class="bg-gray" style="float:right; width:55%; height: 600px;background-color: #005cbf;">
+        <div class="bg-gray" style="width:55%; height: 600px;background-color: #005cbf;">
             <div id="map" style="width:100%;height:100%;"></div> 
         </div>
     </div>
@@ -49,27 +51,22 @@
           const { Map } = await google.maps.importLibrary("maps");
           const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
           
-          map = new Map(document.getElementById("map"), {
+          map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: -25.4284, lng: -49.2733 },
             zoom: 13,
+            mapId: 'contatos'
           });
           for(var i = 0; i < marcas.length; i++) {
-              if(marcas[i] != null && marcas[i] != "") {
-                    var str = marcas[i].replace("(", "").replace(")", ""); // tirar os parênteses
+              if(marcas[i].latlng != null && marcas[i].latlng != "") {
+                    var str = marcas[i].latlng.replace("(", "").replace(")", ""); // tirar os parênteses
                     var arr = str.split(","); // separar as coordenadas que estão separadas por vírgula;
                     var lat = parseFloat(arr.length > 0 ? arr[0] : "");
                     var lng = parseFloat(arr.length > 1 ? arr[1] : "");
-                    var marker = new google.maps.Marker({
+                   var marker = new google.maps.marker.AdvancedMarkerElement({
                             map: map,
+                            title: marcas[i].descr,
                             position: new google.maps.LatLng({lat: lat, lng: lng})
                     });
-                    
-/*                    var marker = new google.maps.marker.AdvancedMarkerElement({
-                            map: map,
-                            position: new google.maps.LatLngAltitude({lat: lat, lng: lng})
-                    });
-                 * 
- */
               }
           }
         }
@@ -79,13 +76,11 @@
         
         function pesquisarContatos(evt) {
             var texto = document.getElementById("filtro").value;
-            if(evt.keyCode == 8) { // backspace
+            if(evt.keyCode == 8 && texto.length > 1) { // backspace
                 texto = texto.substr(0, texto.length - 1);
             }
             var tipoContato = document.getElementById("filtro-tipo-contato").value;
-            if(texto.length > 1) {
-                filtrarContatos(tipoContato, texto + (evt.keyCode > 32 ? evt.key : ""));
-            }
+            filtrarContatos(tipoContato, texto + (evt.keyCode > 32 ? evt.key : ""));
         }
         
         function filtrarContatos(tipoContato, texto) {
@@ -95,6 +90,18 @@
                 .then(data => { return data.text(); })
                 .then(html => {
                     document.getElementById("lista-contatos").innerHTML = html;
+                });
+        }
+        
+        function mostrarContato(id) {
+            fetch("api/contato/" + id, {method : "GET"})
+                .then(data => { return data.json(); })
+                .then(contato => {
+                    var str = contato.lat_long.replace("(", "").replace(")", ""); // tirar os parênteses
+                    var arr = str.split(","); // separar as coordenadas que estão separadas por vírgula;
+                    var lat = parseFloat(arr.length > 0 ? arr[0] : "");
+                    var lng = parseFloat(arr.length > 1 ? arr[1] : "");
+                    map.setCenter(new google.maps.LatLng({lat: lat, lng: lng}));
                 });
         }
         

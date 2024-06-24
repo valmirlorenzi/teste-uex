@@ -1,12 +1,17 @@
 <style>
     #form-contato {background-color: #ffffdd;}
-    #form-contato input {
+    #form-contato input, #form-contato select {
         width:100%;
         margin-bottom: 15px;
     }
     .erro { border-color: red; }
+    .botao { border: solid 1px cornflowerblue }
 </style>
 <x-app-layout>
+    <script>
+        var marcas = []; // para armazenas as coordenadas dos contatos cadastrados
+    </script>
+    
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             {{ __('Contatos') }}
@@ -22,29 +27,14 @@
             </div>
         </div>
     </div>
-    <div>
-        <div class="bg-white" style="width:40%; float: left;">
-            @php($i = 0)
-            @foreach($contatos as $contato)
-                <div style="background-color:{{$i % 2 == 0 ? '#ffffff': '#dddddd'}}">
-                    <div>
-                        <div style="font-size:1.2em; font-weight: bold;">{{$contato["nome"] . " - " . $contato["id"]}}</div>
-                        <div style="font-size:0.9em;">CPF: {{$contato["cpf"]}}</div>
-                        <div style="font-size:0.8em;">Telefone: {{$contato["telefone"]}}</div>
-                        <div style="font-size:0.8em;">{{$contato["endereco"] . ", " . $contato["numero"] . ($contato["complemento"] != "" ? " - " . $contato["complemento"] : "")}}</div>
-                        <div style="font-size:0.8em;">{{$contato["cep"] . " - " . $contato["nome_bairro"] }}</div>
-                        <div style="font-size:0.8em;">{{$contato["nome_cidade"] . " - " . $contato["uf"] }}</div>
-                        <div style="font-size:0.8em;">{{$contato["lat_long"]}}</div>
-                    </div>
-                    <div>
-                        <div><a style="color:blue;font-size:1.1em" href="javascript:editarContato({{$contato["id"]}})">Editar</a></div>
-                        <div><a style="color:red;" href="javascript:excluirContato({{$contato["id"]}}, '{{$contato["nome"]}}')">Excluir</a></div>
-                    </div>
-                </div>
-                @php($i++)
-            @endforeach
+    <div style="display:flex;">
+        <div id="lista-contatos" class="bg-white" style="width:40%;">
+            @php
+                $tipo = "lista";
+                require('../resources/views/lista-contato.php');
+            @endphp
         </div>
-        <div class="bg-gray" style="float:right; width:55%;" >
+        <div class="bg-gray" style="width:55%;" >
             <h1 style="font-size:1.3em;font-weight: bold;">Edite o contato aqui. Para incluir um novo, clique em 'limpar' e informe os dados.</h1>
             <form id="form-contato" onsubmit="return validarESalvarDadosContato();">
                 <input type='hidden' id="id_contato" value=''/>
@@ -85,8 +75,8 @@
                 <label for="latlant">Coordenadas</label>
                 <input type="text" id="latlong_contato" name="latlong_contato" required="required" />
                 
-                <input type="submit" class="salvar" value="Salvar" />
-                <input type="submit" class="limpar" onclick="limparDadosForm();" value="Limpar" />
+                <input class="botao" type="submit" class="salvar" value="Salvar" />
+                <input class="botao" type="submit" class="limpar" onclick="limparDadosForm();" value="Limpar" />
             </form>                        
                 
             <button onclick="posicionarMapa()">Marcar endereço no mapa</button>
@@ -102,6 +92,7 @@
 
         async function initMap(endereco) {
           const { Map } = await google.maps.importLibrary("maps");
+          const { AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
             var geocoder = new google.maps.Geocoder();
                 geocoder.geocode({
                     'address': endereco
@@ -109,10 +100,11 @@
                     if(status == google.maps.GeocoderStatus.OK) {
                         document.getElementById("latlong_contato").value = results[0].geometry.location;
                         map.setCenter(results[0].geometry.location);
-                        var marker = new google.maps.Marker({
-                                map: map,
-                                position: results[0].geometry.location
-                        });
+                        var marker = new google.maps.marker.AdvancedMarkerElement({
+                                 map: map,
+                                 title: endereco,
+                                 position: results[0].geometry.location
+                         });
                     }
                 });
             
@@ -120,11 +112,18 @@
             map = new Map(document.getElementById("map"), {
               center: { lat: -25.4284, lng: -49.2733 },
               zoom: 16,
+              mapId: 'contatos'
             });
+            
         }
 
         // funçao que trará o usuário selecionado e abrirá um modal para alteração
         buscarUFs();
+        
+        function mostrarContato(id) {
+            editarContato(id);
+        }
+        
         function editarContato(id) {
             fetch("api/contato/" + id, {method : "GET"})
                 .then(data => { return data.json(); })
@@ -204,19 +203,18 @@
         }
         
         function excluirContato(id, nome) {
-            if(confirm('Deseja mesmo excluir o contato ' + nome + "?")) {
-                fetch("api/contato/" + id, {method : "DELETE"})
-                    .then(data => { return data.json(); })
-                    .then(ret => {
-                        if(ret == 1) {
-                            alert("Contato " + nome + " excluido com sucesso");
-                            location.reload();
-                        }
-                        else {
-                            alert("ERRO ao excluir o contato " + nome);
-                        }
-                    });
-            }
+            var senha = prompt('Informe a senha para excluir o usuário ' + nome + ":");
+            fetch("api/contato/" + id, {method : "DELETE", body: {senha: senha} })
+                .then(data => { return data.json(); })
+                .then(ret => {
+                    if(ret == 1) {
+                        alert("Contato " + nome + " excluido com sucesso");
+                        location.reload();
+                    }
+                    else {
+                        alert("ERRO ao excluir o contato " + nome);
+                    }
+                });
         }
         
         function limparDadosForm() {
@@ -280,19 +278,19 @@
                 if(id == null || id == undefined || id == "") { // trata-se de um novo contato
                     fetch("api/contato/", {method : "POST", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
                         .then(data => { return data.text(); })
-                        .then(ret => {
+                        .then(html => {
                             document.getElementById("lista-contatos").innerHTML = html;
                         });
                 }
                 else { // alteração de contato
                     fetch("api/contato/" + id, {method : "PUT", headers: {"Content-Type": "application/x-www-form-urlencoded"},  body: new URLSearchParams(params).toString()})
                         .then(data => { return data.text(); })
-                        .then(ret => {
+                        .then(html => {
                             document.getElementById("lista-contatos").innerHTML = html;
                         });
                 }
                 limparDadosForm();
-                return true;
+                return false;
             }
 
         }

@@ -23,7 +23,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::get("/contatos", [ContatoController::class, 'index']);
 Route::get("/contatos/{tipo}/{texto}", [ContatoController::class, 'filtra']);
-Route::get("/contato/{id}", [ContatoController::class, 'show']);
+Route::get("/contatos/{tipo}", [ContatoController::class, 'filtra']);
+Route::get("/contato/{id}", [ContatoController::class, 'edit']);
 Route::get("/cep/{cep}", [ViaCepController::class, 'show']);
 Route::get("/ufs", [CidadeController::class, 'pegarUFs']);
 Route::get("/cidades/{uf}/{texto}", [CidadeController::class, 'pegarCidades']);
